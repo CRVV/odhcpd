@@ -578,7 +578,7 @@ void odhcpd_reload(void)
 		clean_interface(i);
 
 	struct uci_package *dhcp = NULL;
-	if (!uci_load(uci, "dhcp", &dhcp)) {
+	if (!uci_load(uci, "odhcpd", &dhcp)) {
 		struct uci_element *e;
 		uci_foreach_element(&dhcp->sections, e) {
 			struct uci_section *s = uci_to_section(e);
