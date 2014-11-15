@@ -1,2 +1,2 @@
-Use odhcpd version 2014-11-06
+odhcpd version 2014-11-06
 Change odhcpd's config file /etc/config/dhcp to /etc/config/odhcpd
