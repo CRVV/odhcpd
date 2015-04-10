@@ -69,8 +69,6 @@ struct odhcpd_ipaddr {
 	struct in6_addr addr;
 	uint8_t prefix;
 	uint8_t dprefix;
-	bool has_class;
-	uint16_t class;
 	uint32_t preferred;
 	uint32_t valid;
 };
@@ -188,11 +186,11 @@ ssize_t odhcpd_get_interface_addresses(int ifindex,
 		struct odhcpd_ipaddr *addrs, size_t cnt);
 int odhcpd_get_preferred_interface_address(int ifindex, struct in6_addr *addr);
 struct interface* odhcpd_get_interface_by_name(const char *name);
-int odhcpd_get_interface_mtu(const char *ifname);
+int odhcpd_get_interface_config(const char *ifname, const char *what);
 int odhcpd_get_mac(const struct interface *iface, uint8_t mac[6]);
 struct interface* odhcpd_get_interface_by_index(int ifindex);
 struct interface* odhcpd_get_master_interface(void);
-void odhcpd_urandom(void *data, size_t len);
+int odhcpd_urandom(void *data, size_t len);
 void odhcpd_setup_route(const struct in6_addr *addr, int prefixlen,
 		const struct interface *iface, const struct in6_addr *gw, bool add);
 
@@ -211,7 +209,6 @@ int init_ubus(void);
 const char* ubus_get_ifname(const char *name);
 void ubus_apply_network(void);
 bool ubus_has_prefix(const char *name, const char *ifname);
-bool ubus_get_class(const char *ifname, const struct in6_addr *addr, uint16_t *pclass);
 #endif
 
 
