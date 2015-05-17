@@ -60,7 +60,6 @@ void free_dhcpv6_assignment(struct dhcpv6_assignment *c)
 
 	free(c->managed);
 	free(c->hostname);
-	free(c->classes);
 	free(c);
 }
 
@@ -75,7 +74,7 @@ int setup_dhcpv6_ia_interface(struct interface *iface, bool enable)
 		}
 	}
 
-	if (iface->dhcpv6 == RELAYD_SERVER) {
+	if (enable && iface->dhcpv6 == RELAYD_SERVER) {
 		if (!iface->ia_assignments.next)
 			INIT_LIST_HEAD(&iface->ia_assignments);
 
@@ -133,7 +132,6 @@ int setup_dhcpv6_ia_interface(struct interface *iface, bool enable)
 					a->hostname = strdup(lease->hostname);
 				}
 			} else {
-				free(a->classes);
 				free(a->hostname);
 				free(a);
 			}
@@ -583,7 +581,8 @@ static void update(struct interface *iface)
 	int minprefix = -1;
 
 	for (int i = 0; i < len; ++i) {
-		if (addr[i].preferred > 0 && addr[i].prefix > minprefix)
+		if (addr[i].preferred > 0 && addr[i].prefix < 64 &&
+				addr[i].prefix > minprefix)
 			minprefix = addr[i].prefix;
 
 		addr[i].addr.s6_addr32[3] = 0;
@@ -596,7 +595,10 @@ static void update(struct interface *iface)
 	}
 
 	struct dhcpv6_assignment *border = list_last_entry(&iface->ia_assignments, struct dhcpv6_assignment, head);
-	border->assigned = 1 << (64 - minprefix);
+	if (minprefix > 32 && minprefix <= 64)
+		border->assigned = 1U << (64 - minprefix);
+	else
+		border->assigned = 0;
 
 	bool change = len != (int)iface->ia_addr_len;
 	for (int i = 0; !change && i < len; ++i)
@@ -755,7 +757,8 @@ static size_t append_reply(uint8_t *buf, size_t buflen, uint16_t status,
 					size_t entrlen = sizeof(p) - 4;
 
 					if (datalen + entrlen + 4 > buflen ||
-							(a->assigned == 0 && a->managed_size == 0))
+							(a->assigned == 0 && a->managed_size == 0) ||
+							(!a->managed_size && a->length < p.preferred))
 						continue;
 
 					memcpy(buf + datalen, &p, sizeof(p));
